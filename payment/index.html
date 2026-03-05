@@ -1,1 +1,241 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>সাথী পেমেন্ট গেটওয়ে</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .method-btn:focus {
+            outline: none;
+        }
+        /* Loader CSS */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="font-sans flex items-center justify-center min-h-screen p-4 bg-gray-100">
 
+    <!-- Payment Gateway Card -->
+    <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border-t-8 border-pink-500">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800"><i class="fa-solid fa-wallet text-pink-500 mr-2"></i> পেমেন্ট গেটওয়ে</h3>
+            </div>
+
+            <p class="text-sm text-gray-500 mb-4 text-center">পেমেন্ট মেথড নির্বাচন করুন</p>
+
+            <!-- Method Selection -->
+            <div class="flex gap-4 mb-6">
+                <button onclick="selectMethod('bkash')" class="method-btn flex-1 border-2 border-gray-200 rounded-2xl p-3 hover:border-pink-500 focus:border-pink-500 transition duration-300 bg-white shadow-sm" id="btn-bkash">
+                    <img src="https://nusratjahan-851.github.io/my-sc-tools/bkash.png" class="h-10 mx-auto" alt="bKash">
+                </button>
+                <button onclick="selectMethod('nagad')" class="method-btn flex-1 border-2 border-gray-200 rounded-2xl p-3 hover:border-orange-500 focus:border-orange-500 transition duration-300 bg-white shadow-sm" id="btn-nagad">
+                    <img src="https://nusratjahan-851.github.io/my-sc-tools/nagad.png" class="h-10 mx-auto" alt="Nagad">
+                </button>
+            </div>
+
+            <!-- Method Details (Hidden by default) -->
+            <div id="method-details" class="hidden bg-gray-50 p-4 rounded-xl mb-6 text-center border border-gray-200 shadow-inner">
+                <p class="text-sm font-bold text-gray-600 mb-1" id="method-text"></p>
+                <p class="text-2xl font-black tracking-wider" id="payment-number">017XXXXXXXX</p>
+                <p class="text-xs text-gray-500 mt-2">উপরের নাম্বারে সেন্ড মানি করুন</p>
+            </div>
+
+            <!-- Form Details -->
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold text-gray-600 ml-1">বন্ধুর ইউজার আইডি</label>
+                    <input type="number" id="pay-userid" oninput="autoSelectProfile()" placeholder="Ex: 5005" class="w-full bg-gray-100 p-4 rounded-xl outline-none border-2 border-transparent focus:border-pink-400 transition">
+                </div>
+
+                <!-- Auto Profile Preview -->
+                <div id="pay-preview" class="hidden flex items-center gap-3 bg-pink-50 p-3 rounded-xl border border-pink-200 shadow-sm transition-all duration-300">
+                    <img id="pay-preview-img" src="" class="w-12 h-12 rounded-full object-cover border-2 border-pink-400">
+                    <div>
+                        <p class="font-bold text-sm text-gray-800" id="pay-preview-name"></p>
+                        <p class="text-[10px] text-green-600 font-bold"><i class="fa-solid fa-circle-check"></i> Selected for Friendship</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-gray-600 ml-1">পেমেন্ট প্যাকেজ</label>
+                    <select id="pay-amount" class="w-full bg-gray-100 p-4 rounded-xl outline-none border-2 border-transparent focus:border-pink-400 cursor-pointer">
+                        <option value="১০ মিনিটে ২০ টাকা">১০ মিনিটে ২০ টাকা</option>
+                        <option value="৩০ মিনিটে ৫০ টাকা">৩০ মিনিটে ৫০ টাকা</option>
+                        <option value="১ ঘণ্টা ১০০ টাকা">১ ঘণ্টা ১০০ টাকা</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-gray-600 ml-1">আপনার নাম্বার এর শেষ ৩টি সংখ্যা</label>
+                    <input type="number" id="pay-last-digits" placeholder="Ex: 450" class="w-full bg-gray-100 p-4 rounded-xl outline-none border-2 border-transparent focus:border-pink-400 transition">
+                </div>
+
+                <button id="submit-btn" onclick="submitPaymentRequest()" class="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all active:scale-95 mt-2 flex items-center justify-center">
+                    <span id="btn-text">পেমেন্ট নিশ্চিত করুন</span>
+                </button>
+            </div>
+            
+            <p class="text-xs text-center text-gray-400 mt-5"><i class="fa-solid fa-shield-halved"></i> পেমেন্ট করার ২ মিনিট এর মধ্যে যোগাযোগ না করা হলে রিপোর্ট করুন।</p>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // আপনার টেলিগ্রাম বটের তথ্য
+        const TELEGRAM_BOT_TOKEN = '8793297790:AAEZE9Oh6ii4Tp9rfj2HFQDg-AYbL44Yfy0';
+        const TELEGRAM_CHAT_ID = '8271536101';
+        
+        let selectedPaymentMethodName = "";
+
+        function selectMethod(method) {
+            const details = document.getElementById('method-details');
+            const methodText = document.getElementById('method-text');
+            const num = document.getElementById('payment-number');
+            
+            // Show the details box
+            details.classList.remove('hidden');
+            details.classList.add('animate-pulse'); 
+            setTimeout(() => details.classList.remove('animate-pulse'), 500);
+            
+            if(method === 'bkash'){
+                selectedPaymentMethodName = "bKash";
+                methodText.innerText = "বিকাশ পার্সোনাল (Send Money)";
+                num.innerText = "017XXXXXXXX"; // এখানে আপনার বিকাশ নাম্বার দিন
+                num.style.color = "#d1005a"; 
+                document.getElementById('btn-bkash').classList.add('border-pink-500', 'bg-pink-50');
+                document.getElementById('btn-nagad').classList.remove('border-orange-500', 'bg-orange-50');
+            } else if(method === 'nagad') {
+                selectedPaymentMethodName = "Nagad";
+                methodText.innerText = "নগদ পার্সোনাল (Send Money)";
+                num.innerText = "019XXXXXXXX"; // এখানে আপনার নগদ নাম্বার দিন
+                num.style.color = "#ff4b2b"; 
+                document.getElementById('btn-nagad').classList.add('border-orange-500', 'bg-orange-50');
+                document.getElementById('btn-bkash').classList.remove('border-pink-500', 'bg-pink-50');
+            }
+        }
+
+        function autoSelectProfile() {
+            const val = document.getElementById('pay-userid').value;
+            const preview = document.getElementById('pay-preview');
+            const name = document.getElementById('pay-preview-name');
+            const img = document.getElementById('pay-preview-img');
+            
+            if(val.length >= 4) {
+                preview.classList.remove('hidden');
+                name.innerText = "সাথী প্রোফাইল #" + val;
+                img.src = `https://i.pravatar.cc/100?u=${val}`;
+            } else {
+                preview.classList.add('hidden');
+            }
+        }
+
+        async function submitPaymentRequest() {
+            const uid = document.getElementById('pay-userid').value;
+            const amt = document.getElementById('pay-amount').value;
+            const last = document.getElementById('pay-last-digits').value;
+            const submitBtn = document.getElementById('submit-btn');
+            const btnText = document.getElementById('btn-text');
+            
+            // Validations
+            if (!selectedPaymentMethodName) {
+                return alert("দয়া করে প্রথমে পেমেন্ট মেথড (বিকাশ বা নগদ) নির্বাচন করুন!");
+            }
+            if(!uid || !last) {
+                return alert("দয়া করে বন্ধুর ইউজার আইডি এবং আপনার নাম্বারের লাস্ট ৩টি সংখ্যা লিখুন!");
+            }
+            if(last.length !== 3) {
+                return alert("দয়া করে শুধুমাত্র লাস্ট ৩টি সংখ্যা দিন।");
+            }
+
+            // Button Loading State
+            submitBtn.disabled = true;
+            btnText.innerHTML = '<span class="loader"></span> প্রসেসিং হচ্ছে...';
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+
+            // Telegram Message Formatting
+            const message = `
+🔔 <b>নতুন পেমেন্ট রিকোয়েস্ট!</b>
+━━━━━━━━━━━━━━━━━
+💳 <b>মেথড:</b> ${selectedPaymentMethodName}
+👤 <b>সাথী আইডি:</b> ${uid}
+📦 <b>প্যাকেজ:</b> ${amt}
+📱 <b>লাস্ট ৩ ডিজিট:</b> ${last}
+━━━━━━━━━━━━━━━━━
+            `;
+
+            // Telegram API URL (Bot)
+            const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+            // Payload with Inline Keyboard Commands (Approve/Reject)
+            const payload = {
+                chat_id: TELEGRAM_CHAT_ID,
+                text: message,
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [[
+                            { text: "✅ Accept Payment", callback_data: `/accept_${uid}_${last}` },
+                            { text: "❌ Reject Payment", callback_data: `/reject_${uid}_${last}` }
+                        ]
+                    ]
+                }
+            };
+
+            try {
+                // Sending Data via Telegram API
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    alert("✅ আপনার পেমেন্ট রিকোয়েস্ট এডমিনের কাছে পাঠানো হয়েছে। অনুগ্রহ করে ১-২ মিনিট অপেক্ষা করুন।");
+                    
+                    // Clear the form after success
+                    document.getElementById('pay-userid').value = '';
+                    document.getElementById('pay-last-digits').value = '';
+                    document.getElementById('pay-preview').classList.add('hidden');
+                    document.getElementById('method-details').classList.add('hidden');
+                    selectedPaymentMethodName = "";
+                    document.getElementById('btn-nagad').classList.remove('border-orange-500', 'bg-orange-50');
+                    document.getElementById('btn-bkash').classList.remove('border-pink-500', 'bg-pink-50');
+                } else {
+                    alert("❌ সার্ভারে সমস্যা হয়েছে! দয়া করে আবার চেষ্টা করুন।");
+                    console.error("Telegram API Error:", data.description);
+                }
+            } catch (error) {
+                alert("❌ ইন্টারনেট সংযোগে সমস্যা! আবার চেষ্টা করুন।");
+                console.error("Fetch Error:", error);
+            } finally {
+                // Reset Button State
+                submitBtn.disabled = false;
+                btnText.innerHTML = 'পেমেন্ট নিশ্চিত করুন';
+                submitBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,1 +1,349 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Premium Chat Service</title>
+    <style>
+        /* ==========================================
+           1. Core Reset & App Structure
+           ========================================== */
+        :root {
+            --wa-header-bg: #ffffff; --wa-chat-bg: #efeae2; --wa-sent: #d9fdd3; --wa-recv: #ffffff;
+            --wa-icon: #54656f; --wa-green: #00a884; --wa-text-main: #111b21; --wa-text-muted: #667781;
+            --wa-sys-bg: #ffeecd; --wa-sys-text: #54656f; --wa-call-bg: #121b22;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        html, body { width: 100%; height: 100%; overflow: hidden; position: fixed; background-color: #000; display: flex; justify-content: center; align-items: center; }
+        
+        .app-container { width: 100%; height: 100%; max-width: 480px; background-color: #0b141a; display: flex; flex-direction: column; position: relative; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        
+        /* ==========================================
+           2. Chat List Screen (Home)
+           ========================================== */
+        #list-screen { background-color: #111b21; color: #fff; }
+        .tabs { display: flex; background-color: #202c33; padding: 10px 0 0 0; }
+        .tab-btn { flex: 1; padding: 15px; background: transparent; border: none; color: #8696a0; font-size: 16px; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .tab-btn.active { color: var(--wa-green); border-bottom-color: var(--wa-green); }
+        .chat-list { flex: 1; overflow-y: auto; padding-bottom: 20px; }
+        .chat-item { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; transition: background 0.2s; border-bottom: 1px solid #202c33; }
+        .chat-item:hover { background-color: #202c33; }
+        .profile-img-list { width: 55px; height: 55px; border-radius: 50%; object-fit: cover; border: 2px solid #ffd700; padding: 2px; }
+        .item-info { flex: 1; margin-left: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .text-content { display: flex; flex-direction: column; }
+        .item-name { font-size: 17px; font-weight: bold; display: flex; align-items: center; gap: 5px;}
+        .premium-badge { font-size: 11px; background: linear-gradient(45deg, #ffd700, #ff8c00); color: #000; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+        .item-sub { color: #8696a0; font-size: 13px; margin-top: 4px; }
+        .lock-icon { width: 20px; height: 20px; fill: #ffd700; }
 
+        /* ==========================================
+           3. Chat Screen (Messages)
+           ========================================== */
+        #chat-screen { background-color: var(--wa-chat-bg); display: none; }
+        .header { background-color: var(--wa-header-bg); padding: 5px 10px; display: flex; justify-content: space-between; align-items: center; height: 60px; flex-shrink: 0; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+        .header-left { display: flex; align-items: center; gap: 8px; cursor: pointer; flex: 1; overflow: hidden;}
+        .back-btn { display: flex; align-items: center; fill: var(--wa-icon); padding: 5px; cursor: pointer;}
+        .profile-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--wa-green);}
+        .user-info { display: flex; flex-direction: column; }
+        .user-info .name { font-size: 1.1rem; font-weight: 600; color: var(--wa-text-main); }
+        .user-info .status { font-size: 0.8rem; color: var(--wa-green); }
+        .header-right { display: flex; align-items: center; gap: 18px; flex-shrink: 0;}
+        .icon { width: 24px; height: 24px; fill: var(--wa-icon); cursor: pointer; }
+        
+        .chat-area { flex: 1; padding: 10px 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-size: cover; background-position: center; }
+        .sys-msg { text-align: center; margin: 10px 0; display: flex; justify-content: center; }
+        .sys-msg span { background: var(--wa-header-bg); font-size: 0.75rem; color: var(--wa-text-muted); padding: 5px 12px; border-radius: 10px; box-shadow: 0 1px 1px rgba(0,0,0,0.05); }
+        .encrypt-msg { background: var(--wa-sys-bg); color: var(--wa-sys-text); font-size: 0.8rem; padding: 8px 12px; border-radius: 10px; text-align: center; line-height: 1.4; display: flex; gap: 5px; justify-content: center; max-width: 95%; margin: 0 auto; }
+        
+        .msg { max-width: 85%; display: flex; flex-direction: column; animation: slideUp 0.3s ease; margin-bottom: 5px; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .bubble { padding: 8px 12px; border-radius: 8px; font-size: 0.95rem; color: var(--wa-text-main); box-shadow: 0 1px 1px rgba(0,0,0,0.1); position: relative; word-wrap: break-word; line-height: 1.5; }
+        .msg.sent { align-self: flex-end; } .msg.sent .bubble { background-color: var(--wa-sent); border-top-right-radius: 0; }
+        .msg.received { align-self: flex-start; } .msg.received .bubble { background-color: var(--wa-recv); border-top-left-radius: 0; }
+        
+        /* Bot Form Design */
+        .bot-form { margin-top: 10px; background: #f0f2f5; padding: 10px; border-radius: 8px; border: 1px solid #ddd;}
+        .bot-form label { display: block; margin: 8px 0; font-weight: bold; cursor: pointer; font-size: 15px;}
+        .bot-form input[type="checkbox"] { width: 16px; height: 16px; margin-right: 8px; accent-color: var(--wa-green); cursor: pointer;}
+        .bot-btn { background: var(--wa-green); color: white; border: none; padding: 8px 15px; border-radius: 5px; width: 100%; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        
+        /* Input Area */
+        .input-area { background-color: transparent; padding: 5px; display: flex; align-items: flex-end; gap: 5px; width: 100%; z-index: 10; }
+        .input-wrapper { flex: 1; background: var(--wa-header-bg); border-radius: 24px; display: flex; align-items: center; padding: 0 12px; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); min-height: 48px; }
+        .chat-input { flex: 1; border: none; outline: none; font-size: 1.05rem; background: transparent; padding: 10px 0;}
+        .fab-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--wa-green); display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; flex-shrink: 0;}
+        .fab-btn svg { width: 22px; height: 22px; fill: white; }
+
+        /* Custom Toast Alert */
+        .toast-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: none; justify-content: center; align-items: center; background: rgba(0,0,0,0.6); }
+        .toast-box { background: #fff; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .toast-icon { width: 60px; height: 60px; background: #ffebee; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 15px auto; }
+        .toast-icon svg { width: 30px; height: 30px; fill: #d32f2f; }
+        .toast-title { font-size: 18px; font-weight: bold; color: #111b21; margin-bottom: 10px; }
+        .toast-msg { font-size: 14px; color: #54656f; line-height: 1.5; margin-bottom: 20px; }
+        .toast-btn { background: var(--wa-green); color: white; border: none; padding: 10px 20px; border-radius: 25px; font-weight: bold; width: 100%; cursor: pointer; font-size: 16px;}
+        
+    </style>
+</head>
+<body>
+
+<!-- Custom Alert Box -->
+<div class="toast-overlay" id="customToast">
+    <div class="toast-box">
+        <div class="toast-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+        </div>
+        <div class="toast-title">পেমেন্ট পেন্ডিং!</div>
+        <div class="toast-msg">সার্ভিস গ্রহণ করার জন্য পেমেন্ট নিশ্চিত করুন। অ্যাডমিন পেমেন্ট ভেরিফাই করলে এই ফিচারটি আনলক হবে।</div>
+        <button class="toast-btn" onclick="closeToast()">বুঝতে পেরেছি</button>
+    </div>
+</div>
+
+<!-- ================= 1. HOME SCREEN (CHAT LIST) ================= -->
+<div class="app-container" id="list-screen">
+    <div class="tabs">
+        <button id="btn-bd" class="tab-btn active" onclick="filterList('Bangladesh')">Bangladesh</button>
+        <button id="btn-in" class="tab-btn" onclick="filterList('India')">India</button>
+    </div>
+    <div id="contact-list" class="chat-list"></div>
+</div>
+
+<!-- ================= 2. CHAT SCREEN ================= -->
+<div class="app-container" id="chat-screen">
+    <header class="header">
+        <div class="header-left" onclick="closeChat()">
+            <div class="back-btn"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path></svg></div>
+            <img src="" alt="Profile" class="profile-img" id="chat-img" onerror="this.src='https://cdn-icons-png.flaticon.com/512/847/847969.png'">
+            <div class="user-info">
+                <span class="name" id="chat-name">Name</span>
+                <span class="status">Premium 🔒 Online</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <!-- Locked Buttons -->
+            <svg class="icon" onclick="showPaymentWarning()" viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"></path></svg>
+            <svg class="icon" onclick="showPaymentWarning()" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"></path></svg>
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"></path></svg>
+        </div>
+    </header>
+
+    <main class="chat-area" id="chatArea">
+        <div class="sys-msg"><span>Today</span></div>
+        <div class="encrypt-msg">
+            <svg viewBox="0 0 24 24" width="12" height="12" style="fill:var(--wa-sys-text);"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+            Messages and calls are end-to-end encrypted.
+        </div>
+        <!-- Chat bubbles will load here dynamically -->
+    </main>
+
+    <footer class="input-area">
+        <div class="input-wrapper">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S8.33 8 7.5 8 6 8.67 6 9.5 6.67 11 7.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H7.89c.8 2.04 2.78 3.5 5.11 3.5z"></path></svg>
+            <input type="text" class="chat-input" placeholder="Message" onclick="showPaymentWarning()" readonly>
+            <svg class="icon" onclick="showPaymentWarning()" style="transform: rotate(-45deg);" viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 3.04 2.46 5.5 5.5s5.5-2.46 5.5-5.5V6h-1.5z"></path></svg>
+            <svg class="icon" onclick="showPaymentWarning()" viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm8 3c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3z"></path></svg>
+        </div>
+        <button class="fab-btn" onclick="showPaymentWarning()">
+            <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"></path></svg>
+        </button>
+    </footer>
+</div>
+
+<script>
+    // ==========================================
+    // 1. Data Generation (Unique Names)
+    // ==========================================
+    const bdNames =['মিম', 'জুই', 'প্রিয়া', 'আনিকা', 'শিলা', 'লিসা', 'রিয়া', 'বর্ষা', 'তমা', 'মিতু', 'সাথী', 'কনক', 'নদী', 'রূপা', 'সোনিয়া', 'জেসমিন', 'শায়লা', 'নোভা', 'রুহি', 'মিলা'];
+    const inNames =['প্রিয়াঙ্কা', 'দীপিকা', 'আলিয়া', 'ক্যাটরিনা', 'শ্রদ্ধা', 'কৃতি', 'দিশা', 'কিয়ারা', 'তারা', 'অনন্যা', 'জাহ্নবী', 'সারা', 'রাধিকা', 'ভূমি', 'তাপসী', 'বিদ্যা', 'সোনাক্ষী', 'পরিণীতি', 'অদিতি', 'হুমা', 'স্বরা', 'রিচা', 'কঙ্কনা', 'নেহা', 'শিল্পা', 'মাধুরী', 'কারিশমা', 'কারিনা', 'বিপাশা', 'সুস্মিতা'];
+
+    const profiles =[];
+
+    // Generating 50 Profiles
+    for (let i = 1; i <= 50; i++) {
+        let country = (i <= 20) ? 'Bangladesh' : 'India';
+        let name = (i <= 20) ? bdNames[i - 1] : inNames[i - 21];
+        let userId = Math.floor(1000 + Math.random() * 9000); // 4 Digit ID
+        let followers = (Math.random() * 50 + 1).toFixed(1) + 'K'; 
+        
+        profiles.push({
+            id: userId,
+            name: name,
+            country: country,
+            image: `my-logo${i}.jpg`, 
+            followers: followers
+        });
+    }
+
+    // ==========================================
+    // 2. Render List Logic
+    // ==========================================
+    function renderList(countryFilter) {
+        const listContainer = document.getElementById('contact-list');
+        listContainer.innerHTML = ''; 
+
+        const filteredProfiles = profiles.filter(p => p.country === countryFilter);
+
+        filteredProfiles.forEach(profile => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'chat-item';
+            
+            // Pass the whole profile object as stringified JSON to the click handler
+            itemDiv.onclick = () => openChat(profile);
+
+            itemDiv.innerHTML = `
+                <img class="profile-img-list" src="${profile.image}" alt="${profile.name}" onerror="this.src='https://via.placeholder.com/55/333333/FFFFFF?text=${profile.name.charAt(0)}'">
+                <div class="item-info">
+                    <div class="text-content">
+                        <span class="item-name">
+                            ${profile.name} <span class="premium-badge">Premium</span>
+                        </span>
+                        <span class="item-sub">Followers: ${profile.followers} • ID: ${profile.id}</span>
+                    </div>
+                    <svg class="lock-icon" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                </div>
+            `;
+            listContainer.appendChild(itemDiv);
+        });
+    }
+
+    function filterList(country) {
+        document.getElementById('btn-bd').classList.remove('active');
+        document.getElementById('btn-in').classList.remove('active');
+        
+        if(country === 'Bangladesh') {
+            document.getElementById('btn-bd').classList.add('active');
+        } else {
+            document.getElementById('btn-in').classList.add('active');
+        }
+        renderList(country);
+    }
+    filterList('Bangladesh'); // Load Default
+
+    // ==========================================
+    // 3. Navigation & Payment Lock Logic
+    // ==========================================
+    let currentProfile = null;
+
+    function showPaymentWarning() {
+        document.getElementById('customToast').style.display = 'flex';
+    }
+    
+    function closeToast() {
+        document.getElementById('customToast').style.display = 'none';
+    }
+
+    function openChat(profile) {
+        currentProfile = profile;
+        
+        // Update Header
+        document.getElementById('chat-name').innerText = profile.name;
+        document.getElementById('chat-img').src = profile.image;
+        document.getElementById('chat-img').onerror = function() {
+            this.src = `https://via.placeholder.com/40/00a884/FFFFFF?text=${profile.name.charAt(0)}`;
+        };
+
+        // Switch Screen
+        document.getElementById('list-screen').style.display = 'none';
+        document.getElementById('chat-screen').style.display = 'flex';
+
+        // Start Bot Flow
+        initiateBotSequence(profile);
+    }
+
+    function closeChat() {
+        document.getElementById('chat-screen').style.display = 'none';
+        document.getElementById('list-screen').style.display = 'flex';
+    }
+
+    // ==========================================
+    // 4. Bot Auto Reply Logic
+    // ==========================================
+    function appendMessage(text, type, containsHTML = false) {
+        const chatArea = document.getElementById('chatArea');
+        const div = document.createElement('div');
+        div.className = `msg ${type}`;
+        
+        if(containsHTML) {
+            div.innerHTML = `<div class="bubble">${text}</div>`;
+        } else {
+            div.innerHTML = `<div class="bubble">${text}</div>`;
+        }
+        chatArea.appendChild(div);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function initiateBotSequence(profile) {
+        const chatArea = document.getElementById('chatArea');
+        // Clear previous messages, keep system message
+        chatArea.innerHTML = `
+            <div class="sys-msg"><span>Today</span></div>
+            <div class="encrypt-msg">
+                <svg viewBox="0 0 24 24" width="12" height="12" style="fill:var(--wa-sys-text);"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM9 6c0-1.66 1.34-3 3-3s3 1.34 3 3v2H9V6zm9 14H6V10h12v10zm-6-3c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+                Messages and calls are end-to-end encrypted.
+            </div>
+        `;
+
+        // 1. Welcome Message
+        setTimeout(() => {
+            appendMessage(`হ্যালো! <b>${profile.name}</b> এর প্রিমিয়াম প্রোফাইলে আপনাকে স্বাগতম! 💖`, 'received', true);
+        }, 500);
+
+        // 2. Service Selection Message
+        setTimeout(() => {
+            let formHtml = `
+                আপনি কি ধরনের সার্ভিস চাচ্ছেন? নিচে টিক দিন:
+                <div class="bot-form">
+                    <label><input type="checkbox" id="chkAudio"> 🎧 Audio Call</label>
+                    <label><input type="checkbox" id="chkVideo"> 📹 Video Call</label>
+                    <button class="bot-btn" onclick="processServiceSelection()">Next</button>
+                </div>
+            `;
+            appendMessage(formHtml, 'received', true);
+        }, 1200);
+    }
+
+    // This is called when user clicks 'Next' in the chat bubble
+    window.processServiceSelection = function() {
+        const isAudio = document.getElementById('chkAudio').checked;
+        const isVideo = document.getElementById('chkVideo').checked;
+
+        if (!isAudio && !isVideo) {
+            alert("দয়া করে অন্তত একটি সার্ভিস সিলেক্ট করুন।");
+            return;
+        }
+
+        // Disable button so user doesn't click multiple times
+        event.target.innerText = "Processing...";
+        event.target.disabled = true;
+
+        setTimeout(() => {
+            let responseText = "<b>সার্ভিস রেট এবং বিস্তারিত:</b><br><br>";
+
+            if (isAudio) {
+                responseText += `<b>🎧 অডিও কল সার্ভিস:</b><br>
+                • ১০ মিনিট ১০০ টাকা<br>
+                • ২০ মিনিট ১৫০ টাকা<br>
+                • ৩০ মিনিট ২০০ টাকা<br>
+                • ১ ঘন্টা ৫০০ টাকা<br><br>`;
+            }
+
+            if (isVideo) {
+                responseText += `<b>📹 ভিডিও কল সার্ভিস:</b><br>
+                • ১০ মিনিট ২১০ টাকা<br>
+                • ৩০ মিনিট ৫১০ টাকা<br>
+                • ১ ঘন্টা ১০২০ টাকা<br><br>`;
+            }
+
+            responseText += `পেমেন্ট করতে আপনার পছন্দের মানুষটির ৪ সংখ্যার User ID <b>(${currentProfile.id})</b> ব্যবহার করে পেমেন্ট অপশন থেকে পেমেন্ট করুন এবং রোমাঞ্চকর সময় উপভোগ করুন!<br><br>
+            <i>১০০% গ্যারান্টি! পেমেন্ট করে যুক্ত হওয়ার জন্য আহবান জানাচ্ছি। ধন্যবাদ! 🌹</i>`;
+
+            appendMessage(responseText, 'received', true);
+
+        }, 800);
+    };
+
+</script>
+
+</body>
+</html>
